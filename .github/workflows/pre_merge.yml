@@ -23,3 +23,16 @@ jobs:
       event_name: ${{ github.event_name }}
       pr_ref: ${{ github.event.pull_request.head.ref }}
       pr_repo: ${{ github.event.pull_request.head.repo.full_name }}
+
+  check_run:
+    runs-on: ubuntu-latest
+    needs: [init-status, loading, build]
+    steps:
+      - name: Post check run
+        uses: qualcomm/minkipc/.github/actions/check_run@main
+        with:
+          sha: ${{ inputs.sha }}
+          repo: ${{ inputs.repo }}
+          s3_location: ${{ needs.build.outputs.s3_location }}
+          APPID: ${{ secrets.APPID }}
+          PVK: ${{ secrets.PVK }}
