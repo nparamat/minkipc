@@ -333,7 +333,7 @@ jobs:
     runs-on: ubuntu-latest
     if: success()
     steps:
-      - name: Publish build summary
+      - name: Publish MINKIPC build summary
         run: |
           echo "# Build Summary" >> $GITHUB_STEP_SUMMARY
           echo "Build successful!" >> $GITHUB_STEP_SUMMARY
