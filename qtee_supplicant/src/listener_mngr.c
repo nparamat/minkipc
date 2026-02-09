@@ -42,6 +42,14 @@ static struct listener_svc listeners[] = {
 		.lib_handle = NULL,
 	},
 #endif
+#ifdef RPMB_LISTENER
+	{
+		.service_name = "rpmb service",
+		.is_registered = false,
+		.file_name = "librpmbservice.so.1",
+		.lib_handle = NULL,
+	},
+#endif
 };
 
 /**
@@ -75,7 +83,7 @@ static void stop_listeners_services(void)
 	size_t idx = 0;
 	size_t n_listeners = sizeof(listeners)/sizeof(struct listener_svc);
 
-	MSGD("Total listener services to be stopped = %ld\n", n_listeners);
+	MSGD("Total listener services to be stopped = %zu\n", n_listeners);
 
 	for (idx = 0; idx < n_listeners; idx++) {
 		/* Resource cleanup for registered listeners */
@@ -137,7 +145,7 @@ int start_listener_services(void)
 	size_t idx = 0;
 	size_t n_listeners = sizeof(listeners)/sizeof(struct listener_svc);
 
-	MSGD("Total listener services to start = %ld\n", n_listeners);
+	MSGD("Total listener services to start = %zu\n", n_listeners);
 
 	for (idx = 0; idx < n_listeners; idx++) {
 

@@ -31,13 +31,25 @@ endif()
 
 include_directories(${QCOMTEE_INCLUDE_DIRS})
 
+set(QCBOR_DIR_HINT "" CACHE PATH "Hint path for QCBOR directory")
+
+find_package(QCBOR REQUIRED)
+if(NOT QCBOR_FOUND)
+       message(FATAL_ERROR "QCBOR not found")
+endif()
+
 # ''Source files''.
 
 set(SRC
-	src/syscall.S
 	src/supplicant.c
 	src/mink_adaptor.c
 )
+
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch32|arm)$")
+	list(APPEND SRC src/syscall32.S)    # ARM32
+else()
+	list(APPEND SRC src/syscall.S)      # ARM64
+endif()
 
 add_library(minkadaptor SHARED ${SRC})
 
@@ -61,6 +73,7 @@ target_include_directories(minkadaptor
 
 target_link_libraries(minkadaptor
 	PRIVATE ${QCOMTEE_LIBRARIES}
+	PRIVATE ${QCBOR_LIBRARIES}
 	PRIVATE ${CMAKE_THREAD_LIBS_INIT}
 )
 
