@@ -17,38 +17,46 @@ runs:
           const fs = require('fs');
           const path = require('path');
 
-          const ConfigPath = path.join(process.env.GITHUB_WORKSPACE, 'ci', 'build_matrix.json');
-          let Config;
+          const workspace = process.env.GITHUB_WORKSPACE;
+          // Robust path checking: Checks root and common 'minkipc' subdirectory
+          const possiblePaths = [
+            path.join(workspace, 'ci', 'build_matrix.json'),
+            path.join(workspace, 'minkipc', 'ci', 'build_matrix.json')
+          ];
 
+          let configPath = possiblePaths.find(p => fs.existsSync(p));
+
+          if (!configPath) {
+            core.setFailed(`build_matrix.json not found. Looked in: ${possiblePaths.join(', ')}`);
+            return;
+          }
+
+          let config;
           try {
-            if (!fs.existsSync(ConfigPath)) {
-              core.setFailed(`build_matrix.json not found at ${ConfigPath}`);
-              return;
-            }
-            Config = JSON.parse(fs.readFileSync(ConfigPath, 'utf-8'));
+            config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
           } catch (err) {
-            core.setFailed(`Failed to load or parse build_matrix.json: ${err.message}`);
+            core.setFailed(`Failed to parse build_matrix.json: ${err.message}`);
             return;
           }
 
-          // build_matrix.json must already be in the form:
-          // { "include": [ ... ] }
-          if (!Config || !Array.isArray(Config.include)) {
-            core.setFailed('build_matrix.json must contain an "include" array');
+          // Validate matrix structure
+          if (!config || !Array.isArray(config.include)) {
+            core.setFailed('build_matrix.json must contain an "include" array for GHA strategy expansion.');
             return;
           }
 
-          const build_matrix = Config;
+          const buildMatrixStr = JSON.stringify(config);
+          
+          // Set output and log
+          core.setOutput('build_matrix', buildMatrixStr);
+          console.log('Build Matrix loaded successfully:', JSON.stringify(config, null, 2));
 
-          console.log(JSON.stringify(build_matrix, null, 2));
-          core.setOutput('build_matrix', JSON.stringify(build_matrix));
-          console.log("Build Matrix:", build_matrix);
-
+          // Build Summary
           const md = [
-            '# Repositories to build',
-            '',
+            '##  Build Matrix Initialized',
+            'The following targets were identified in `build_matrix.json`:',
             '```json',
-            JSON.stringify(build_matrix, null, 2),
+            JSON.stringify(config, null, 2),
             '```'
           ].join('\n');
 
