@@ -18,16 +18,38 @@ runs:
           const path = require('path');
 
           const workspace = process.env.GITHUB_WORKSPACE;
-          // Robust path checking: Checks root and common 'minkipc' subdirectory
-          const possiblePaths = [
-            path.join(workspace, 'ci', 'build_matrix.json'),
-            path.join(workspace, 'minkipc', 'ci', 'build_matrix.json')
-          ];
 
-          let configPath = possiblePaths.find(p => fs.existsSync(p));
+          function findFile(startDir, fileName) {
+            const entries = fs.readdirSync(startDir, { withFileTypes: true });
+
+            for (const entry of entries) {
+              const fullPath = path.join(startDir, entry.name);
+
+              if (entry.isFile() && entry.name === fileName) {
+                return fullPath;
+              }
+
+              if (entry.isDirectory()) {
+                const found = findFile(fullPath, fileName);
+                if (found) return found;
+              }
+            }
+
+            return null;
+          }
+
+          const preferredPath = path.join(workspace, 'ci', 'build_matrix.json');
+
+          let configPath = null;
+
+          if (fs.existsSync(preferredPath)) {
+            configPath = preferredPath;
+          } else {
+            configPath = findFile(workspace, 'build_matrix.json');
+          }
 
           if (!configPath) {
-            core.setFailed(`build_matrix.json not found. Looked in: ${possiblePaths.join(', ')}`);
+            core.setFailed(`build_matrix.json not found. Looked first in: ${preferredPath}, then recursively under: ${workspace}`);
             return;
           }
 
@@ -35,7 +57,7 @@ runs:
           try {
             config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
           } catch (err) {
-            core.setFailed(`Failed to parse build_matrix.json: ${err.message}`);
+            core.setFailed(`Failed to parse build_matrix.json at ${configPath}: ${err.message}`);
             return;
           }
 
@@ -46,14 +68,17 @@ runs:
           }
 
           const buildMatrixStr = JSON.stringify(config);
-          
+
           // Set output and log
           core.setOutput('build_matrix', buildMatrixStr);
-          console.log('Build Matrix loaded successfully:', JSON.stringify(config, null, 2));
+          console.log(`Build Matrix loaded successfully from: ${configPath}`);
+          console.log(JSON.stringify(config, null, 2));
 
           // Build Summary
           const md = [
-            '##  Build Matrix Initialized',
+            '## Build Matrix Initialized',
+            `Loaded from: \`${configPath}\``,
+            '',
             'The following targets were identified in `build_matrix.json`:',
             '```json',
             JSON.stringify(config, null, 2),
