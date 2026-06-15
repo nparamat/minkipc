@@ -404,8 +404,8 @@ int rpmb_emmc_write(uint32_t *req_buf, uint32_t blk_cnt,
 		}
 
 		/* Advance to next batch of request frames */
-		req_buf = (uint32_t *)((uint8_t *)req_buf +
-				       frames_per_rpmb_trans * RPMB_BLK_SIZE);
+		req_buf = (uint32_t *)((void *)((uint8_t *)req_buf +
+				       frames_per_rpmb_trans * RPMB_BLK_SIZE));
 	}
 
 	if (ret != 0)
