@@ -20,6 +20,8 @@ option(USE_GLIB "Use GLIB functions" FALSE)
 option(CFG_USE_PKGCONFIG "Use pkg-config for discovering install target directory for systemd and udev files." OFF)
 # Build RPMB listener
 option(BUILD_RPMB_LISTENER "Build RPMB Listener" TRUE)
+# Build RPMB Client
+option(BUILD_RPMB_CLIENT "Build RPMB Client" TRUE)
 
 # Build PKCS-11
 option(BUILD_PKCS11 "Build PKCS#11" TRUE)
@@ -77,3 +79,6 @@ if (BUILD_PKCS11)
 	endif()
 endif()
 
+if(BUILD_RPMB_CLIENT)
+	add_subdirectory(rpmb_client)
+endif()

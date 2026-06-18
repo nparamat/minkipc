@@ -85,7 +85,7 @@ static int sysfs_read_uint(const char *path)
 		return -1;
 	}
 	buf[ret] = '\0';
-	if (sscanf(buf, "%u", &val) != 1) {
+	if (sscanf(buf, "%i", &val) != 1) {
 		RPMB_LOG_ERROR("Failed to parse value from %s\n", path);
 		return -1;
 	}
@@ -106,7 +106,6 @@ int rpmb_emmc_init(void)
 	 * Cap at 32 chars so the compiler can verify snprintf bounds below.
 	 */
 	#define RPMB_DISK_NAME_MAX 32
-	#define RPMB_DISK_NAME_MAX_STR "32"
 	/* "/sys/block/" + disk_name + "/device" + "/" + longest_attr + NUL */
 	#define SYSFS_BASE_MAX (sizeof("/sys/block/") + RPMB_DISK_NAME_MAX + sizeof("/device"))
 	#define SYSFS_PATH_MAX (SYSFS_BASE_MAX + sizeof(SYSFS_ENH_RPMB))
@@ -145,9 +144,9 @@ int rpmb_emmc_init(void)
 		RPMB_LOG_ERROR("RPMB disk name too long: %s\n", devname);
 		return -1;
 	}
-	/* Use the literal macro as precision so the compiler can verify bounds. */
+	/* Print only the disk name (without the "rpmb" suffix) into sysfs_base. */
 	snprintf(sysfs_base, sizeof(sysfs_base),
-		 "/sys/block/%." RPMB_DISK_NAME_MAX_STR "s/device", devname);
+		 "/sys/block/%.*s/device", (int)(len - 4), devname);
 
 	/* Read raw_rpmb_size_mult from sysfs */
 	snprintf(sysfs_path, sizeof(sysfs_path), "%s/%s",
@@ -404,8 +403,8 @@ int rpmb_emmc_write(uint32_t *req_buf, uint32_t blk_cnt,
 		}
 
 		/* Advance to next batch of request frames */
-		req_buf = (uint32_t *)((uint8_t *)req_buf +
-				       frames_per_rpmb_trans * RPMB_BLK_SIZE);
+		req_buf = (uint32_t *)((void *)((uint8_t *)req_buf +
+				       frames_per_rpmb_trans * RPMB_BLK_SIZE));
 	}
 
 	if (ret != 0)
