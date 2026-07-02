@@ -92,12 +92,6 @@ static void stop_listeners_services(void)
 
 			listeners[idx].is_registered = false;
 		}
-
-		/* Close lib_handle for all listeners */
-		if(listeners[idx].lib_handle != NULL) {
-			dlclose(listeners[idx].lib_handle);
-			listeners[idx].lib_handle = NULL;
-		}
 	}
 }
 
@@ -130,7 +124,7 @@ static int init_listener_svc(size_t i)
 
 	ret = (*init_func)();
 	if (ret < 0) {
-		MSGE("Init for %s failed: %d", listeners[i].service_name, ret);
+		MSGE("Init for %s failed: %d\n", listeners[i].service_name, ret);
 		return -1;
 	}
 
