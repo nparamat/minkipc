@@ -49,3 +49,4 @@ runs:
         fetch-depth: 0
         ref: ${{ inputs.base_ref }}
         repository: ${{ inputs.pr_repo }}
+        submodules: recursive

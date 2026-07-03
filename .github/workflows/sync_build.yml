@@ -61,6 +61,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(inputs.build_matrix) }}
+      max-parallel: 3
 
     env:
       ROOTFS_KEY: ${{ matrix.rootfs_key }}
@@ -218,6 +219,7 @@ jobs:
           docker run --rm --privileged --user root \
             -v "${{ github.workspace }}/..:${{ github.workspace }}/.." \
             -e GITHUB_WORKSPACE="${{ github.workspace }}" \
+            -e MATRIX_NAME="${{ matrix.name }}" \                                                         
             "${{ inputs.docker_image }}" \
             bash -lc '
               set -euxo pipefail
@@ -252,9 +254,21 @@ jobs:
               ls -la --time-style=full-iso "${SRC_ROOT}" | sed -n "1,100p"
 
               # Mount the image using loop (requires --privileged)
-              MNT_DIR="/mnt/rootfs"
+
+              MATRIX_NAME="${{ matrix.name }}"
+              MNT_DIR="/mnt/rootfs_${MATRIX_NAME}"
               mkdir -p "${MNT_DIR}"
-              mount -o rw,loop "${IMG_PATH}" "${MNT_DIR}"
+              echo "Using unique mount point: ${MNT_DIR}"
+
+              echo "=========================================="
+              echo "Step 6: Mount image with guestmount (auto-detect)"
+              echo "=========================================="
+              guestmount -a "${IMG_PATH}" -i --rw  "${MNT_DIR}" || {
+                echo "ERROR: Failed to mount with guestmount" >&2
+                exit 1
+              }
+              echo "✅ Successfully mounted with guestmount"
+              echo ""
 
               echo "Container: Mounted filesystem details:"
               df -hT "${MNT_DIR}" || true
@@ -283,8 +297,19 @@ jobs:
               echo "Container: After copy timestamps:"
               ls -la --time-style=full-iso "${MNT_DIR}/usr" | sed -n "1,150p" || true
 
-              # Unmount cleanly
-              umount "${MNT_DIR}"
+              echo "=========================================="
+              echo "Step 10: Unmount"
+              echo "=========================================="
+              guestunmount "${MNT_DIR}" || {
+                echo "ERROR: Failed to unmount with guestunmount" >&2
+                echo "Trying force unmount..."
+                umount -f "${MNT_DIR}" || {
+                  echo "ERROR: All unmount attempts failed" >&2
+                  exit 1
+                }
+              }
+              echo "✅ Successfully unmounted"
+              echo ""
             '
       - name: Verify image mtime changed (after)
         shell: bash
@@ -350,6 +375,23 @@ jobs:
       - name: Clean up
         run: |
           rm -rf artifacts
+
+      # NEW STEP: Build 32-bit
+      - name: Build MINKIPC (32-bit)
+        shell: bash
+        run: |
+          set -euxo pipefail
+          echo "=========================================="
+          echo "Building 32-bit MINKIPC"
+          echo "=========================================="
+          # Make script executable
+          chmod +x ci/build32.sh
+          # Run 32-bit build
+          ./ci/build32.sh
+          echo "=========================================="
+          echo "✅ 32-bit build completed"
+          echo "=========================================="
+
 
   publish_summary:
     needs: [build]

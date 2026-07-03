@@ -18,7 +18,7 @@ jobs:
     uses: qualcomm/minkipc/.github/workflows/sync_build.yml@main
     secrets: inherit
     with:
-      docker_image: ssg-image:v1.0
+      docker_image: ssg-image:v1.1
       build_matrix: ${{ needs.load_parameters.outputs.build_matrix }}
       event_name: ${{ github.event_name }}
       pr_ref: ${{ github.event.pull_request.head.ref }}

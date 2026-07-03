@@ -5,7 +5,7 @@ inputs:
   docker_image:
     description: Docker image
     required: true
-    default: ssg-image:v1.0
+    default: ssg-image:v1.1
   event_name:
     description: Event type that triggered the workflow (e.g., pull_request, push, workflow_call)
     required: true
