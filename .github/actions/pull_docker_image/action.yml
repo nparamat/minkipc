@@ -5,12 +5,12 @@ inputs:
   image:
     description: The docker image to pull
     required: true
-    default: ssg-image:v1.0
+    default: ssg-image:v1.1
 
   tag:
     description: The tag to apply to the pulled image
     required: false
-    default: v1.0
+    default: v1.1
 
 runs:
   using: "composite"
