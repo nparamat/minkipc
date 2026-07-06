@@ -219,7 +219,7 @@ jobs:
           docker run --rm --privileged --user root \
             -v "${{ github.workspace }}/..:${{ github.workspace }}/.." \
             -e GITHUB_WORKSPACE="${{ github.workspace }}" \
-            -e MATRIX_NAME="${{ matrix.name }}" \                                                         
+            -e MATRIX_NAME="${{ matrix.name }}" \
             "${{ inputs.docker_image }}" \
             bash -lc '
               set -euxo pipefail
